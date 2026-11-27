@@ -47,3 +47,7 @@ jobs:
           test "$(psql -X -At -v ON_ERROR_STOP=1 -c 'select count(*) from portfleet_v2.records')" = 3
       - name: Test access controls and transactions
         run: psql -X -v ON_ERROR_STOP=1 -f database/phase1/test/003_integration.sql
+      - name: Apply owner MFA authorization in isolated database
+        run: psql -X -v ON_ERROR_STOP=1 -f database/phase1/003_owner_mfa.sql
+      - name: Verify AAL authorization and personal/staff compatibility
+        run: psql -X -v ON_ERROR_STOP=1 -f database/phase1/test/004_mfa.sql
