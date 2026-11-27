@@ -1,0 +1,17 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const html=fs.readFileSync('owner.html','utf8');
+const a=html.indexOf('const OWNER_IDLE_MS='),b=html.indexOf('function allowedRole(owner)',a);
+assert.ok(a>=0&&b>a);
+let now=1000,locked=0,scheduled,removed=[];
+const storage={getItem:()=>JSON.stringify({userId:'owner'}),removeItem:k=>removed.push(k)};
+const state=new Function('Date','setTimeout','clearTimeout','document','localStorage','LEGACY_REMEMBER_KEY', "let session={id:'owner'},sessionIsOwner=true;function lock(reason){if(reason!=='idle')throw Error(reason);lockedCount++;session=null}let lockedCount=0;"+html.slice(a,b)+";return {ownerIdleExpired,ownerActivity,checkOwnerIdle,scheduleOwnerIdle,clearLegacyOwnerRefresh,init(t){session={};sessionIsOwner=true;ownerLastActivity=t;lockedCount=0},count(){return lockedCount},last(){return ownerLastActivity}}")( {now:()=>now},(f,delay)=>{scheduled={f,delay};return 1},()=>{}, {hidden:false},storage,'legacy');
+state.init(now);
+assert.equal(state.ownerIdleExpired(599999,0),false);assert.equal(state.ownerIdleExpired(600000,0),true);assert.equal(state.ownerIdleExpired(0,1),true);
+now=2000;state.ownerActivity({isTrusted:false});assert.equal(state.last(),1000);
+state.ownerActivity({isTrusted:true});assert.equal(state.last(),2000);assert.equal(scheduled.delay,600000);
+now=602000;state.ownerActivity({isTrusted:true});assert.equal(state.count(),1);
+state.init(now);now+=600000;assert.equal(state.checkOwnerIdle(),true);
+state.clearLegacyOwnerRefresh('different');assert.equal(removed.length,0);state.clearLegacyOwnerRefresh('owner');assert.deepEqual(removed,['legacy']);
+assert.ok(html.includes('function readRemembered(){return null}'));assert.ok(html.includes('function writeRemembered(s){return false}'));
+assert.ok(html.includes("async function freshSession(s){if(checkOwnerIdle())"));assert.ok(html.includes("if(recoveryMode||checkOwnerIdle())return"));
+console.log('PASS: owner inactivity expiry, trusted activity, clock rollback, local refresh-token controls');
