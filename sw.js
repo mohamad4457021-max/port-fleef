@@ -1,5 +1,9 @@
-const CACHE = 'portfleet-v7-install-1';
-const APP = ['./index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
-self.addEventListener('install', event => {event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP)));});
-self.addEventListener('activate', event => {event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith('portfleet-v7-install-')&&key!==CACHE)await caches.delete(key);await self.clients.claim();})());});
-self.addEventListener('fetch', event => {const req=event.request; if(req.method!=='GET'||new URL(req.url).origin!==self.location.origin)return;const path=new URL(req.url).pathname; if(req.mode==='navigate'){event.respondWith((async()=>{try{const response=await fetch(req);if(response.ok && (path===new URL('./',self.location).pathname||path===new URL('./index.html',self.location).pathname)){const cache=await caches.open(CACHE);await cache.put('./index.html',response.clone());}return response;}catch{return await caches.match('./index.html')||Response.error();}})());return;}if(APP.some(item=>new URL(item,self.location).pathname===path)){event.respondWith(caches.match(req).then(hit=>hit||fetch(req)));}});
+const CACHE='portfleet-v7-install-2';
+const ROOT=self.registration.scope;
+const HOME=new URL('index.html',ROOT).href;
+const APP=['index.html','manifest.json','app-icon-192.png','app-icon-512.png'].map(p=>new URL(p,ROOT).href);
+self.addEventListener('install',event=>event.waitUntil((async()=>{const c=await caches.open(CACHE);await c.addAll(APP.map(url=>new Request(url,{cache:'reload'})));await self.skipWaiting();})()));
+self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const k of await caches.keys())if(k.startsWith('portfleet-v7-install-')&&k!==CACHE)await caches.delete(k);await self.clients.claim();})()));
+self.addEventListener('fetch',event=>{const r=event.request;const url=new URL(r.url);if(r.method!=='GET'||!url.href.startsWith(ROOT))return;
+if(r.mode==='navigate'&&(url.pathname===new URL(ROOT).pathname||url.pathname===new URL(HOME).pathname)){event.respondWith((async()=>{try{const res=await fetch(r);if(res.ok){const c=await caches.open(CACHE);await c.put(HOME,res.clone());return res;}throw new Error('unavailable');}catch{return (await caches.open(CACHE)).match(HOME).then(x=>x||Response.error());}})());return;}
+const clean=url.origin+url.pathname;if(APP.includes(clean)){event.respondWith((async()=>{try{const res=await fetch(r);if(res.ok)return res;}catch{}return (await caches.open(CACHE)).match(clean).then(x=>x||Response.error());})());}});
