@@ -1,0 +1,55 @@
+name: Port Fleet database staging tests
+on:
+  push:
+    branches: [database-security-phase1]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: disposable-test-password
+          POSTGRES_DB: portfleet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d portfleet_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-test-password
+      PGDATABASE: portfleet_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client if needed
+        run: command -v psql || (sudo apt-get update && sudo apt-get install -y postgresql-client)
+      - name: Apply legacy schema and test fixture
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f database/phase1/test/000_fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -f portfleet-central-v8.1.sql
+          psql -X -v ON_ERROR_STOP=1 -f portfleet-security-v9.3.sql
+          psql -X -v ON_ERROR_STOP=1 -f database/phase1/test/001_seed.sql
+      - name: Apply phase one in isolated database
+        run: psql -X -v ON_ERROR_STOP=1 -f database/phase1/001_relational_projection.sql
+      - name: Verify schema grants and migration
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f database/phase1/002_verify.sql
+          psql -X -At -v ON_ERROR_STOP=1 -f database/phase1/002_verify.sql | grep -x 0
+          test "$(psql -X -At -v ON_ERROR_STOP=1 -c 'select count(*) from portfleet_v2.records')" = 3
+      - name: Test access controls and transactions
+        run: psql -X -v ON_ERROR_STOP=1 -f database/phase1/test/003_integration.sql
+      - name: Apply owner MFA authorization in isolated database
+        run: psql -X -v ON_ERROR_STOP=1 -f database/phase1/003_owner_mfa.sql
+      - name: Verify AAL authorization and personal/staff compatibility
+        run: psql -X -v ON_ERROR_STOP=1 -f database/phase1/test/004_mfa.sql
+      - name: Test owner MFA browser logic with mocked Auth API
+        run: node database/phase1/test/005_owner_mfa_ui.cjs
