@@ -1,4 +1,4 @@
-const CACHE='portfleet-user-install-37';
+const CACHE='portfleet-user-install-38';
 const ROOT=self.registration.scope;
 const HOME=new URL('index.html',ROOT).href;
 const APP=['index.html','manifest.json','user-icon-192.png','user-icon-512.png'].map(p=>new URL(p,ROOT).href);
