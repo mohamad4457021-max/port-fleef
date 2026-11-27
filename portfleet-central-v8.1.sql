@@ -53,7 +53,8 @@ begin
   end if;
   if v_revision is null then raise exception 'REVISION_CONFLICT' using errcode='40001'; end if;
   return v_revision;
-end $$;
+end;
+$;
 revoke all on function public.portfleet_save(bigint,jsonb) from public, anon, authenticated;
 grant execute on function public.portfleet_save(bigint,jsonb) to authenticated;
 notify pgrst, 'reload schema';
