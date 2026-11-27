@@ -1,7 +1,7 @@
-const CACHE='portfleet-user-install-42';
+const CACHE='portfleet-user-install-43';
 const ROOT=self.registration.scope;
 const HOME=new URL('index.html',ROOT).href;
-const APP=['index.html','manifest.json','user-icon-192.png','user-icon-512.png'].map(p=>new URL(p,ROOT).href);
+const APP=['fonts/cairo.ttf','index.html','manifest.json','user-icon-192.png','user-icon-512.png'].map(p=>new URL(p,ROOT).href);
 self.addEventListener('install',event=>event.waitUntil((async()=>{const c=await caches.open(CACHE);await c.addAll(APP.map(url=>new Request(url,{cache:'reload'})));await self.skipWaiting();})()));
 self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const k of await caches.keys())if(k.startsWith('portfleet-user-install-')&&k!==CACHE)await caches.delete(k);await self.clients.claim();})()));
 self.addEventListener('fetch',event=>{const r=event.request;const url=new URL(r.url);if(r.method!=='GET'||!url.href.startsWith(ROOT))return;
