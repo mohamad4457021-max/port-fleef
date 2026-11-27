@@ -43,6 +43,7 @@ jobs:
       - name: Verify schema grants and migration
         run: |
           psql -X -v ON_ERROR_STOP=1 -f database/phase1/002_verify.sql
+          psql -X -At -v ON_ERROR_STOP=1 -f database/phase1/002_verify.sql | grep -x 0
           test "$(psql -X -At -v ON_ERROR_STOP=1 -c 'select count(*) from portfleet_v2.records')" = 3
       - name: Test access controls and transactions
         run: psql -X -v ON_ERROR_STOP=1 -f database/phase1/test/003_integration.sql
