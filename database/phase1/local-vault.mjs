@@ -40,10 +40,10 @@ const same=(a,b)=>a===null?b===null:b!==null&&JSON.stringify(a)===JSON.stringify
 // Adapter contract: read(scope) returns envelope or null; compareAndSwap(scope, expected, next)
 // commits atomically or rejects VAULT_CONFLICT. No automatic deletion of legacy plaintext.
 export async function createVault(store,scope,passphrase,payload){
- scopeCheck(scope);if(await store.read(scope)!==null)throw Error('VAULT_EXISTS');
- const salt=crypto.getRandomValues(new Uint8Array(16)),key=await derive(passphrase,salt),e=await seal(key,salt,scope,1,payload);
+ scopeCheck(scope);const copy=structuredClone(payload);payloadCheck(copy);if(await store.read(scope)!==null)throw Error('VAULT_EXISTS');
+ const salt=crypto.getRandomValues(new Uint8Array(16)),key=await derive(passphrase,salt),e=await seal(key,salt,scope,1,copy);
  await store.compareAndSwap(scope,null,e);
- return session(store,scope,key,salt,e,payload);
+ return session(store,scope,key,salt,e,copy);
 }
 export async function unlockVault(store,scope,passphrase){
  scopeCheck(scope);const e=await store.read(scope);if(!e)throw Error('VAULT_MISSING');
