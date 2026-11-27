@@ -51,3 +51,5 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f database/phase1/003_owner_mfa.sql
       - name: Verify AAL authorization and personal/staff compatibility
         run: psql -X -v ON_ERROR_STOP=1 -f database/phase1/test/004_mfa.sql
+      - name: Test owner MFA browser logic with mocked Auth API
+        run: node database/phase1/test/005_owner_mfa_ui.cjs
