@@ -30,3 +30,7 @@ create function fixture.snapshot(a text) returns jsonb language sql immutable as
 $$;
 grant usage on schema fixture to authenticated,anon;
 grant execute on function fixture.snapshot(text) to authenticated,anon;
+
+-- Simulate the JWT claim in the disposable fixture, not real Auth token verification.
+create function auth.jwt() returns jsonb language sql stable as $$ select jsonb_build_object('aal',nullif(current_setting('request.jwt.claim.aal',true),'')) $$;
+grant execute on function auth.jwt() to authenticated,anon;
