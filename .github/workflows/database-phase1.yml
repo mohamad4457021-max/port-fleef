@@ -53,3 +53,7 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f database/phase1/test/004_mfa.sql
       - name: Test owner MFA browser logic with mocked Auth API
         run: node database/phase1/test/005_owner_mfa_ui.cjs
+      - name: Test encryption with real Web Crypto and simulated durable store
+        run: node database/phase1/test/006_local_vault.mjs
+      - name: Test owner idle lock with simulated clock
+        run: node database/phase1/test/007_owner_idle.cjs
