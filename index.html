@@ -12,30 +12,53 @@
 <link rel="apple-touch-icon" href="./owner-icon-192.png">
 <script src="./launcher.js" defer></script>
 <style>
-:root{color-scheme:light;--blue:#175783;--ink:#20344c;--muted:#60758c;--border:#dce7ef}
+:root{color-scheme:light;--navy:#102b44;--teal:#176c72;--ink:#17334a;--muted:#536c7c;--line:#dce5eb;--surface:#fff;--bg:#edf3f6;--gold:#9b752e}
 *{box-sizing:border-box}
-body{margin:0;min-height:100vh;min-height:100dvh;background:linear-gradient(165deg,#13243e 0%,#1b3d59 35%,#eef4f8 35%,#eef4f8 100%);font:16px/1.7 "Segoe UI",Tahoma,Arial,sans-serif;color:var(--ink);display:grid;place-items:center;padding:28px 20px max(28px,env(safe-area-inset-bottom))}
-main{width:min(100%,480px)}
-header{text-align:center;color:#fff;margin-bottom:26px;background:#17324c;border-radius:22px;padding:24px 14px}
-.brand{display:grid;place-items:center;width:75px;height:75px;margin:0 auto 14px;border:1px solid #ffffff40;border-radius:23px;background:#ffffff12;font-size:34px}
-h1{font-size:clamp(24px,5vw,31px);margin:0;font-weight:800}
-header p{margin:7px 0;color:#e0e9f2;font-size:15px}
-nav{display:grid;gap:14px}
-.choice{display:flex;align-items:center;gap:15px;min-height:112px;padding:19px;text-decoration:none;color:var(--ink);background:white;border:1px solid var(--border);border-radius:20px;box-shadow:0 12px 28px #13243e16;transition:transform .15s ease}
-.choice:hover,.choice:focus-visible{transform:translateY(-2px);outline:3px solid #5991b4;outline-offset:3px}
-.choice img{width:62px;height:62px;flex:0 0 62px;border-radius:16px}
-.choice strong{font-size:21px;display:block;line-height:1.4}
-.choice small{font-size:13px;display:block;margin-top:6px;color:var(--muted)}
-.arrow{margin-inline-start:auto;font-size:24px;color:var(--blue)}
-.central{border-inline-start:5px solid #c4a15e}.fleet{border-inline-start:5px solid #267ca9}
-footer{text-align:center;color:var(--muted);font-size:12px;margin-top:23px}
-@media(max-width:350px){body{padding:20px 12px}.choice{gap:10px;padding:14px}.choice strong{font-size:18px}.choice img{width:48px;height:48px;flex-basis:48px}}
+html{min-height:100%;-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;min-height:100dvh;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif}
+main{max-width:560px;min-height:100vh;min-height:100dvh;margin:auto;display:flex;flex-direction:column;background:var(--surface)}
+header{position:relative;isolation:isolate;overflow:hidden;color:#fff;background:linear-gradient(145deg,#10283e,#174b60);border-radius:0 0 28px 28px;padding:calc(24px + env(safe-area-inset-top)) 24px 26px}
+header::after{content:"";position:absolute;z-index:-1;width:260px;height:260px;inset-inline-end:-120px;top:-105px;border:1px solid #ffffff19;border-radius:50%;box-shadow:0 0 0 24px #ffffff08,0 0 0 50px #ffffff06;pointer-events:none}
+.identity{display:flex;align-items:center;gap:12px}
+.brand{display:grid;place-items:center;flex:0 0 56px;width:56px;height:56px;border-radius:17px;background:#ffffff13;border:1px solid #ffffff30}
+.brand svg{width:32px;height:32px;stroke:#b7e5e7;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.eyebrow{margin:0 0 3px;font-size:11px;letter-spacing:1px;color:#bce0e6;font-weight:700}
+.identity-name{font-size:14px;font-weight:650;margin:0;color:#f0f7fa}
+h1{font-size:clamp(23px,5.8vw,31px);line-height:1.4;letter-spacing:-.4px;margin:23px 0 7px;font-weight:800}
+header .intro{margin:0;color:#d1e2e9;font-size:14px}
+.content{padding:24px 20px 20px}
+.section-title{font-size:16px;font-weight:750;margin:0 2px 12px}
+nav{display:grid;gap:12px}
+.choice{position:relative;display:grid;grid-template-columns:56px minmax(0,1fr) 26px;align-items:center;gap:13px;min-height:118px;padding:16px;color:var(--ink);text-decoration:none;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:0 4px 14px #102b4408;-webkit-tap-highlight-color:transparent;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}
+.choice:active{transform:scale(.985)}
+.choice:focus-visible{outline:3px solid #267e94;outline-offset:3px}
+.choice img{display:block;width:56px;height:56px;border-radius:15px}
+.choice .copy{min-width:0}
+.choice strong{display:block;font-size:19px;line-height:1.4;font-weight:800}
+.choice small{display:block;font-size:12px;line-height:1.55;margin:5px 0 7px;color:var(--muted)}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;line-height:1.4;border-radius:6px;padding:3px 8px;background:#f7f0e2;color:#75571d}
+.fleet .tag{background:#e6f3ef;color:#145e5b}
+.arrow{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#edf3f7;color:var(--navy)}
+.arrow svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+footer{margin-top:auto;padding:12px 20px calc(20px + env(safe-area-inset-bottom));text-align:center;color:var(--muted);font-size:11px}
+footer span{display:inline-block;border-top:1px solid var(--line);padding-top:13px;min-width:150px}
+@media(min-width:600px){main{min-height:min(100vh,760px);min-height:min(100dvh,760px);margin:clamp(16px,4vh,44px) auto;border:1px solid var(--line);border-radius:30px;overflow:hidden;box-shadow:0 18px 60px #102b4412}header{padding:30px 30px 32px}.content{padding:30px}}
+@media(max-width:350px){header{padding-inline:18px}.content{padding-inline:13px}.choice{grid-template-columns:46px minmax(0,1fr) 22px;gap:10px;padding:13px}.choice img{width:46px;height:46px}.choice strong{font-size:17px}.arrow{width:22px;height:22px}}
 @media(prefers-reduced-motion:reduce){.choice{transition:none}}
-body{background:linear-gradient(180deg,#142b43 0%,#1d485a 43%,#eef3f7 43%,#eef3f7 100%);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif}header{background:transparent;box-shadow:none;padding:20px 8px;margin-bottom:15px}.brand{background:#ffffff12;border-radius:20px;width:68px;height:68px}.choice{min-height:105px;border-radius:16px;box-shadow:0 5px 22px #13243e14}.choice img{border-radius:14px}.choice small{line-height:1.5}.central{border-inline-start:4px solid #bd9c55}.fleet{border-inline-start:4px solid #238b85}footer{margin-top:20px} @media(prefers-color-scheme:dark){body{background:linear-gradient(180deg,#142b43 0%,#1d485a 43%,#101f2d 43%)}.choice{background:#1a3042;border-color:#385265;color:#e7eef4}.choice small,footer{color:#b1c6d4}.arrow{color:#8fd9df}}</style>
+@media(prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#0e1b27;--surface:#142837;--ink:#e8f0f5;--muted:#b3c6d2;--line:#314857;--navy:#d8ebf1}.arrow{background:#233e50}.tag{background:#3b3424;color:#f0d79c}.fleet .tag{background:#173e3d;color:#a9e5d9}}
+</style>
 </head><body>
-<main><header><div class="brand" aria-hidden="true">⚓</div><h1>الإدارة الذكية لآليات المرفأ</h1><p>اختر التطبيق الذي تريد الدخول إليه</p></header>
+<main>
+<header>
+<div class="identity"><div class="brand" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="6" r="3"/><path d="M16 9v19M10 13h12M5 20c0 5 5 8 11 8s11-3 11-8M2 22l3-4 4 3M23 21l4-3 3 4"/></svg></div><div><p class="eyebrow" lang="en" dir="ltr">PORT FLEET</p><p class="identity-name">نظام إدارة المرفأ</p></div></div>
+<h1>الإدارة الذكية لآليات المرفأ</h1>
+<p class="intro">متابعة الآليات وتنظيم العمليات من مكان واحد.</p>
+</header>
+<section class="content" aria-labelledby="workspace-title"><h2 id="workspace-title" class="section-title">اختر مساحة العمل</h2>
 <nav aria-label="اختيار التطبيق">
-<a class="choice central" href="./owner.html"><img src="./owner-icon-192.png" width="62" height="62" alt=""><span><strong>الإدارة المركزية</strong><small>خاص بحساب المالك</small></span><span class="arrow" aria-hidden="true">‹</span></a>
-<a class="choice fleet" href="./user/"><img src="./user/user-icon-192.png" width="62" height="62" alt=""><span><strong>إدارة الآليات</strong><small>دخول مباشر دون حساب</small></span><span class="arrow" aria-hidden="true">‹</span></a>
-</nav><footer>إصدار 10.10 · اختيار مساحة العمل</footer></main>
+<a class="choice central" href="./owner.html"><img src="./owner-icon-192.png" width="56" height="56" alt=""><span class="copy"><strong>الإدارة المركزية</strong><small>لوحة التحكم وإدارة الصلاحيات والتقارير</small><span class="tag">خاص بحساب المالك</span></span><span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></svg></span></a>
+<a class="choice fleet" href="./user/"><img src="./user/user-icon-192.png" width="56" height="56" alt=""><span class="copy"><strong>إدارة الآليات</strong><small>سجلات التشغيل والمحروقات والصيانة</small><span class="tag">دخول مباشر دون حساب</span></span><span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></svg></span></a>
+</nav></section>
+<footer><span>الإصدار <bdi>10.10.1</bdi></span></footer>
+</main>
 </body></html>
