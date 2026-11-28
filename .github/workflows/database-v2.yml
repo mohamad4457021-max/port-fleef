@@ -76,4 +76,4 @@ jobs:
         working-directory: database/v2/client
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund fake-indexeddb@6.0.0
       - name: Test local queue and synchronization
-        run: node --test database/v2/client/offline-outbox.test.mjs
+        run: node --test database/v2/client/offline-outbox.test.mjs database/v2/client/staging-transport.test.mjs
