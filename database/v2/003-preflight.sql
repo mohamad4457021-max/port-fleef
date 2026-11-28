@@ -78,12 +78,12 @@ end; $$;
 revoke all on function portfleet_v2.preflight_snapshot(jsonb) from public, anon, authenticated;
 create function portfleet_v2.preflight(p_owner uuid)
 returns table(section text,issue text,affected_count bigint)
-language plpgsql security invoker set search_path='' as $
+language plpgsql security invoker set search_path='' as $$
 declare s jsonb;
 begin
  select snapshot into s from public.portfleet_state where owner_id=p_owner;
  if s is null then raise exception 'SOURCE_NOT_FOUND';end if;
  return query select x.section,x.issue,x.affected_count from portfleet_v2.preflight_snapshot(s) x;
-end; $;
+end; $$;
 revoke all on function portfleet_v2.preflight(uuid) from public, anon, authenticated;
 commit;
