@@ -68,6 +68,9 @@ jobs:
         env:
           PG16_CONTAINER: ${{ job.services.postgres.id }}
         run: python3 database/v2/ci-backup-restore.py
+      - name: Benchmark 100000 rows and 50 read clients
+        run: python3 database/v2/ci-load.py
+
 
 
   offline-outbox:
