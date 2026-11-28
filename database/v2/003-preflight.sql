@@ -1,13 +1,11 @@
 -- Database V2 / stage 3: read-only migration diagnostics.
 -- Run after 001 in a separate test database. No changes to V1 or V2 data.
 begin;
-create function portfleet_v2.preflight(p_owner uuid)
+create function portfleet_v2.preflight_snapshot(s jsonb)
 returns table(section text,issue text,affected_count bigint)
 language plpgsql security invoker set search_path='' as $$
-declare s jsonb; k text; a jsonb;
+declare k text; a jsonb;
 begin
- select snapshot into s from public.portfleet_state where owner_id=p_owner;
- if s is null then raise exception 'SOURCE_NOT_FOUND'; end if;
  if jsonb_typeof(s) is distinct from 'object' or s->'version' is distinct from '1'::jsonb then
    section:='snapshot';issue:='INVALID_VERSION_OR_SHAPE';affected_count:=1;return next;return;
  end if;
@@ -39,6 +37,24 @@ begin
      if affected_count>0 then issue:='DUPLICATE_CODE';return next;end if;
    end if;
  end loop;
+ -- Validate numeric types and bounds without unsafe casts. Numeric strings are
+ -- flagged for review because the current browser stores validated values as numbers.
+ return query
+ with specs(src,field,positive) as (values
+ ('assets','meter',false),('assets','tank',false),('parts','qty',false),('parts','min',false),('parts','cost',false),
+ ('plans','interval',true),('plans','last',false),('work','cost',false),('assignments','quota',false),
+ ('cranes','work',false),('cranes','wait',false),('cranes','down',false),('cranes','tons',false),('cranes','fuel',false),
+ ('fuel','qty',true),('fuel','meter',false),('moves','qty',true),('moves','cost',false),
+ ('oils','meter',false),('oils','qty',true),('oils','interval',true),('oils','cost',false)
+ ), bad as (
+ select sp.src,sp.field,count(*) n from specs sp
+ cross join lateral jsonb_array_elements(case when jsonb_typeof(s->sp.src)='array' then s->sp.src else '[]'::jsonb end) r(v)
+ where case when jsonb_typeof(r.v->sp.field)='number'
+   then (r.v->>sp.field)::numeric<0 or (sp.positive and (r.v->>sp.field)::numeric=0)
+   else true end
+ group by sp.src,sp.field
+ )
+ select src,('INVALID_NUMBER:'||field)::text,n from bad;
  -- Reference checks never cast historical values. Invalid arrays are reported above.
  return query
  with specs(src,field,target,required) as (values
@@ -59,5 +75,15 @@ begin
  )
  select src,('MISSING_REFERENCE:'||field)::text,n from findings;
 end; $$;
+revoke all on function portfleet_v2.preflight_snapshot(jsonb) from public, anon, authenticated;
+create function portfleet_v2.preflight(p_owner uuid)
+returns table(section text,issue text,affected_count bigint)
+language plpgsql security invoker set search_path='' as $
+declare s jsonb;
+begin
+ select snapshot into s from public.portfleet_state where owner_id=p_owner;
+ if s is null then raise exception 'SOURCE_NOT_FOUND';end if;
+ return query select x.section,x.issue,x.affected_count from portfleet_v2.preflight_snapshot(s) x;
+end; $;
 revoke all on function portfleet_v2.preflight(uuid) from public, anon, authenticated;
 commit;
