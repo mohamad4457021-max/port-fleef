@@ -54,5 +54,23 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f database/v2/009-access-audit.sql
       - name: Verify role isolation and append-only audit
         run: psql -X -v ON_ERROR_STOP=1 -f database/v2/010-access-audit-test.sql
+      - name: Install scoped sync state API
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/011-sync-state.sql
+      - name: Verify sync state and operation receipts
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/012-sync-state-test.sql
       - name: Run two-session concurrency and stale-source tests
         run: python3 database/v2/ci-concurrency.py
+
+  offline-outbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test-only IndexedDB emulator
+        working-directory: database/v2/client
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund fake-indexeddb@6.0.0
+      - name: Test local queue and synchronization
+        run: node --test database/v2/client/offline-outbox.test.mjs
