@@ -50,5 +50,9 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f database/v2/007-inventory-transactions.sql
       - name: Verify inventory posting and stock
         run: psql -X -v ON_ERROR_STOP=1 -f database/v2/008-inventory-transactions-test.sql
+      - name: Install opt-in access and audit API
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/009-access-audit.sql
+      - name: Verify role isolation and append-only audit
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/010-access-audit-test.sql
       - name: Run two-session concurrency and stale-source tests
         run: python3 database/v2/ci-concurrency.py
