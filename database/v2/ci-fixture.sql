@@ -1,0 +1,25 @@
+-- CI ONLY: run in a disposable, empty PostgreSQL instance, NEVER in Supabase production.
+create role anon nologin;
+create role authenticated nologin;
+create table public.portfleet_owner(user_id uuid primary key);
+create table public.portfleet_state(owner_id uuid primary key references public.portfleet_owner(user_id),revision bigint not null,snapshot jsonb not null);
+insert into public.portfleet_owner values ('00000000-0000-4000-8000-000000000001');
+insert into public.portfleet_state values ('00000000-0000-4000-8000-000000000001',1,$fixture${"version":1,"assets":[{"id":"a","code":"CR-1","type":"رافعة","meter":100,"tank":200,"status":"جاهزة","safe":"نعم"},{"id":"b","code":"SV-1","type":"سيارة خدمة","meter":300,"tank":50,"status":"جاهزة","safe":"نعم"},{"id":"c","code":"AV-1","type":"سيارة مخصصة","meter":150,"tank":50,"status":"جاهزة","safe":"نعم"}],"staff":[{"id":"s","code":"EMP-1","name":"Test operator","expiry":"2099-01-01"},{"id":"d","code":"EMP-2","name":"Test driver","expiry":"2099-01-01"}],"parts":[{"id":"pt","code":"P-1","name":"Test part","qty":9,"min":2,"cost":4,"compat":"رافعة"}],"plans":[{"id":"p","asset":"a","interval":100,"last":0,"due":""}],"work":[{"id":"w","asset":"a","plan":"p","date":"2026-01-01","status":"مغلق","cost":20},{"id":"w-open","asset":"a","plan":"","date":"2026-01-03","status":"معتمد","cost":0},{"id":"w-other","asset":"b","plan":"","date":"2026-01-03","status":"معتمد","cost":0}],"requests":[{"id":"r","asset":"b","driver":"d","status":"مغلق","start":"2026-01-01T08:00","end":"2026-01-01T09:00"}],"assignments":[{"id":"as","asset":"c","date":"2026-01-01","returned":"","quota":100}],"cranes":[{"id":"cr","asset":"a","operator":"s","date":"2026-01-01","shift":"أ","work":6,"wait":1,"down":0,"tons":20,"fuel":10}],"fuel":[{"id":"f1","asset":"","date":"2026-01-01","kind":"استلام","qty":100,"meter":0},{"id":"f2","asset":"a","date":"2026-01-02","kind":"صرف","qty":10,"meter":100}],"moves":[{"id":"m1","part":"pt","work":"","date":"2026-01-01","kind":"استلام","qty":10,"cost":4},{"id":"m2","part":"pt","work":"w","date":"2026-01-02","kind":"صرف","qty":1,"cost":4}],"oils":[{"id":"o","asset":"a","oil":"زيت المحرك","date":"2026-01-01","meter":90,"qty":5,"interval":100,"cost":20}],"audit":[{"id":"au","date":"2026-01-01T08:00:00Z","action":"Test only"}]}$fixture$::jsonb);
+
+-- Mock Supabase identity interface for disposable CI only.
+-- The session setting is NOT a production authentication implementation.
+create schema auth;
+create table auth.users(id uuid primary key,email_confirmed_at timestamptz);
+create function auth.uid() returns uuid language sql stable as $$
+ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid
+$$;
+revoke all on schema auth from public;
+revoke all on auth.users from public,anon,authenticated;
+grant usage on schema auth to anon,authenticated;
+grant execute on function auth.uid() to anon,authenticated;
+insert into auth.users values
+ ('00000000-0000-4000-8000-000000000001',now()),
+ ('00000000-0000-4000-8000-000000000002',now()),
+ ('00000000-0000-4000-8000-000000000003',now()),
+ ('00000000-0000-4000-8000-000000000004',null),
+ ('00000000-0000-4000-8000-000000000005',now());

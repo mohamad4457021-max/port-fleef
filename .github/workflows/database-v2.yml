@@ -1,0 +1,88 @@
+name: Database V2 tests
+on:
+  pull_request:
+    paths:
+      - 'database/v2/**'
+      - '.github/workflows/database-v2.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: portfleet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: portfleet_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare synthetic database
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/ci-fixture.sql
+      - name: Apply private staging schema
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/001-shadow-schema.sql
+      - name: Verify atomic migration and privileges
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/002-smoke-test.sql
+      - name: Install read-only preflight
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/003-preflight.sql
+      - name: Test diagnostic scenarios
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/004-preflight-test.sql
+      - name: Install private fuel transaction engine
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/005-fuel-transactions.sql
+      - name: Verify fuel ledger and idempotency
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/006-fuel-transactions-test.sql
+      - name: Install private inventory transaction engine
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/007-inventory-transactions.sql
+      - name: Verify inventory posting and stock
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/008-inventory-transactions-test.sql
+      - name: Install opt-in access and audit API
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/009-access-audit.sql
+      - name: Verify role isolation and append-only audit
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/010-access-audit-test.sql
+      - name: Install scoped sync state API
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/011-sync-state.sql
+      - name: Verify sync state and operation receipts
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/012-sync-state-test.sql
+      - name: Install staged maintenance transaction engine
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/013-maintenance-transactions.sql
+      - name: Verify maintenance and inventory integration
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/014-maintenance-transactions-test.sql
+      - name: Run two-session concurrency and stale-source tests
+        run: python3 database/v2/ci-concurrency.py
+      - name: Exercise backup and isolated restore
+        env:
+          PG16_CONTAINER: ${{ job.services.postgres.id }}
+        run: python3 database/v2/ci-backup-restore.py
+      - name: Benchmark 100000 rows and 50 read clients
+        run: python3 database/v2/ci-load.py
+
+
+
+  offline-outbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test-only IndexedDB emulator
+        working-directory: database/v2/client
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund fake-indexeddb@6.0.0
+      - name: Test local queue and synchronization
+        run: node --test database/v2/client/offline-outbox.test.mjs database/v2/client/staging-transport.test.mjs
