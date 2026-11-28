@@ -42,3 +42,7 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f database/v2/003-preflight.sql
       - name: Test diagnostic scenarios
         run: psql -X -v ON_ERROR_STOP=1 -f database/v2/004-preflight-test.sql
+      - name: Install private fuel transaction engine
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/005-fuel-transactions.sql
+      - name: Verify fuel ledger and idempotency
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/006-fuel-transactions-test.sql
