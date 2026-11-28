@@ -58,6 +58,10 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f database/v2/011-sync-state.sql
       - name: Verify sync state and operation receipts
         run: psql -X -v ON_ERROR_STOP=1 -f database/v2/012-sync-state-test.sql
+      - name: Install staged maintenance transaction engine
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/013-maintenance-transactions.sql
+      - name: Verify maintenance and inventory integration
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/014-maintenance-transactions-test.sql
       - name: Run two-session concurrency and stale-source tests
         run: python3 database/v2/ci-concurrency.py
       - name: Exercise backup and isolated restore
