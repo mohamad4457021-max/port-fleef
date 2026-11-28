@@ -1,0 +1,34 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createStagingTransport} from './staging-transport.mjs';
+const scope={owner:'00000000-0000-4000-8000-000000000001',actor:'00000000-0000-4000-8000-000000000002'};
+const operation='70000000-0000-4000-8000-000000000001';
+test('transport pins identity, profile, allowed fields, error codes and rejects elevated keys',async()=>{
+ let s={access_token:'test-session',user:{id:scope.actor}},calls=[],switchDuring=false,refreshDuring=false,status=200,result={sequence:'0'};
+ const opts={url:'https://staging.example.test',publicKey:'sb_publishable_test',getSession:async()=>s,
+ fetchImpl:async(url,request)=>{calls.push({url:String(url),...request});
+  if(switchDuring)s={...s,user:{id:scope.owner}};
+  if(refreshDuring)s={...s,access_token:'refreshed'};
+  return {ok:status===200,status,json:async()=>result};
+ }};
+ assert.throws(()=>createStagingTransport({...opts,publicKey:'sb_secret_test'}),/INVALID_PUBLIC_KEY/);
+ assert.throws(()=>createStagingTransport({...opts,url:'http://staging.example.test'}),/INVALID_ENDPOINT/);
+ const t=createStagingTransport(opts);
+ assert.deepEqual(await t.state(scope,'fuel'),{sequence:'0'});
+ assert.equal(calls[0].url,'https://staging.example.test/rest/v1/rpc/sync_state');
+ assert.equal(calls[0].headers['Content-Profile'],'portfleet_v2_api');
+ assert.equal(calls[0].headers.Authorization,'Bearer test-session');
+ assert.equal(calls[0].redirect,'error');
+ await t.post(scope,'fuel',{p_owner:scope.owner,p_operation:operation,p_expected:'0',p_kind:'صرف',p_qty:'1',p_reference:'CI',p_asset:'a',p_date:'2026-01-02',actor:scope.owner});
+ assert.equal(JSON.parse(calls[1].body).actor,undefined);
+ assert.throws(()=>t.post(scope,'fuel',{p_owner:scope.actor,p_operation:operation}),/INVALID_OPERATION/);
+ status=409;result={code:'40001'};
+ await assert.rejects(t.state(scope,'fuel'),{code:'40001'});
+ status=200;result={sequence:'0'};refreshDuring=true;
+ await assert.rejects(t.state(scope,'fuel'),{code:'SESSION_CHANGED'});
+ refreshDuring=false;switchDuring=true;
+ await assert.rejects(t.state(scope,'fuel'),{code:'SESSION_MISMATCH'});
+ const before=calls.length;
+ await assert.rejects(t.state(scope,'fuel'),{code:'SESSION_MISMATCH'});
+ assert.equal(calls.length,before);
+});
