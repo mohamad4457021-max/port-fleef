@@ -60,6 +60,9 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f database/v2/012-sync-state-test.sql
       - name: Run two-session concurrency and stale-source tests
         run: python3 database/v2/ci-concurrency.py
+      - name: Exercise backup and isolated restore
+        run: python3 database/v2/ci-backup-restore.py
+
 
   offline-outbox:
     runs-on: ubuntu-latest
