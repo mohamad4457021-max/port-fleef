@@ -1,4 +1,4 @@
-const CACHE='portfleet-v7-install-44';
+const CACHE='portfleet-v7-install-45';
 const ROOT=self.registration.scope;
 const HOME=new URL('index.html',ROOT).href;
 const OWNER=new URL('owner.html',ROOT).href;
