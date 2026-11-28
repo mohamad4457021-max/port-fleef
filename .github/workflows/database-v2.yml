@@ -1,0 +1,44 @@
+name: Database V2 tests
+on:
+  pull_request:
+    paths:
+      - 'database/v2/**'
+      - '.github/workflows/database-v2.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: portfleet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: portfleet_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare synthetic database
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/ci-fixture.sql
+      - name: Apply private staging schema
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/001-shadow-schema.sql
+      - name: Verify atomic migration and privileges
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/002-smoke-test.sql
+      - name: Install read-only preflight
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/003-preflight.sql
+      - name: Test diagnostic scenarios
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/004-preflight-test.sql
