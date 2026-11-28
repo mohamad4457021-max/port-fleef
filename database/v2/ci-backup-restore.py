@@ -72,13 +72,23 @@ before = manifest(SOURCE)
 with tempfile.TemporaryDirectory(prefix="portfleet-ci-") as temp:
     archive = pathlib.Path(temp) / "fixture.dump"
     started = time.monotonic()
-    run(["pg_dump", "--format=custom", "--file", str(archive)])
+    # Use the server image's matching PostgreSQL 16 utilities. Newer clients
+    # can emit SET statements unsupported by PostgreSQL 16 during restore.
+    container = os.environ["PG16_CONTAINER"]
+    with archive.open("wb") as output:
+        subprocess.run(["docker", "exec", container, "pg_dump", "-U", "postgres",
+                        "-d", SOURCE, "--format=custom"], stdout=output,
+                       stderr=subprocess.PIPE, check=True, timeout=120)
     dump_seconds = time.monotonic() - started
     check(archive.stat().st_size > 0, "empty archive")
     run(["createdb", TARGET])
     try:
         started = time.monotonic()
-        run(["pg_restore", "--exit-on-error", "--single-transaction", "--dbname", TARGET, str(archive)])
+        with archive.open("rb") as source:
+            subprocess.run(["docker", "exec", "-i", container, "pg_restore", "-U", "postgres",
+                            "--exit-on-error", "--single-transaction", "--dbname", TARGET],
+                           stdin=source, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                           check=True, timeout=120)
         restore_seconds = time.monotonic() - started
         check(manifest(TARGET) == before, "restored data/sequence mismatch")
         check(sql(f"select count(*) from portfleet_v2.verify_owner('{OWNER}') where exact_match", TARGET) == "12", "baseline mismatch")
