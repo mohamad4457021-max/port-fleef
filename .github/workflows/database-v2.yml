@@ -46,3 +46,9 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f database/v2/005-fuel-transactions.sql
       - name: Verify fuel ledger and idempotency
         run: psql -X -v ON_ERROR_STOP=1 -f database/v2/006-fuel-transactions-test.sql
+      - name: Install private inventory transaction engine
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/007-inventory-transactions.sql
+      - name: Verify inventory posting and stock
+        run: psql -X -v ON_ERROR_STOP=1 -f database/v2/008-inventory-transactions-test.sql
+      - name: Run two-session concurrency and stale-source tests
+        run: python3 database/v2/ci-concurrency.py
